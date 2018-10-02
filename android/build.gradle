@@ -32,3 +32,7 @@ android {
         disable 'InvalidPackage'
     }
 }
+
+dependencies {
+    implementation files('libs/Rong_IMLib.jar')
+}
