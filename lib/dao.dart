@@ -7,7 +7,7 @@ class ResultCallback<T> {
   ErrorCode errorCode;
 
   ResultCallback(
-    bool value,
+    bool isSuccess,
     String callbackType,
     T result,
     ErrorCode errorCode,
@@ -19,6 +19,7 @@ class ResultCallback<T> {
   }
 
   factory ResultCallback.fromJson(Map<dynamic, dynamic> json, [Type type]) {
+    print("chenpei" + json.toString());
     var result = json['result'];
     if (type != null) {
       switch (type) {
@@ -30,6 +31,8 @@ class ResultCallback<T> {
         case ConversationNotificationStatus:
           result = conversationTypeFromInt(result);
           break;
+        //case TypingStatus:
+        //result =
         default:
       }
     }
@@ -53,6 +56,7 @@ class ConnectCallback extends ResultCallback<bool> {
   ) : super(value, callbackType, result, errorCode);
 
   factory ConnectCallback.fromJson(Map<dynamic, dynamic> json) {
+    print("chenpei" + json.toString());
     ConnectCallback callback = ConnectCallback(
       json['isSuccess'],
       json['callbackType'],
@@ -78,6 +82,7 @@ class SendMessageCallback extends ResultCallback<Message> {
   }
 
   factory SendMessageCallback.fromJson(Map<dynamic, dynamic> json) {
+    print("chenpei" + json.toString());
     SendMessageCallback callback = SendMessageCallback(
       json['isSuccess'],
       json['callbackType'],
@@ -115,7 +120,7 @@ enum ConnectionStatus {
   TOKEN_INCORRECT, // 4
   SERVER_INVALID, // 5
   CONN_USER_BLOCKED, // 6
-  NETWORK_UNAVAILABLE, // dart enum index start from 0, -1
+  NETWORK_UNAVAILABLE, // 7 dart enum index start from 0, orginal value is -1
 }
 
 ConnectionStatus connectionStatusFromInt(int value) {
@@ -598,10 +603,55 @@ class FileMessage extends MediaMessageContent {
   }
 }
 
-class TypingStatusListener {}
+class TypingStatusListener {
+  ConversationType conversationType;
+  String targetId;
+  List<TypingStatus> typingStatusSet;
+
+  TypingStatusListener(
+    ConversationType conversationType,
+    String targetId,
+    List<TypingStatus> typingStatusSet,
+  ) {
+    this.conversationType = conversationType;
+    this.targetId = targetId;
+    this.typingStatusSet = typingStatusSet;
+  }
+
+  factory TypingStatusListener.fromJson(Map<dynamic, dynamic> json) {
+    TypingStatusListener status = TypingStatusListener(
+      conversationTypeFromInt(json['conversationType']),
+      json['targetId'],
+      // TODO List
+      json['typingStatusSet'],
+    );
+    return status;
+  }
+}
 
 class TypingStatus {
-  double sentTime;
+  int sentTime;
   String typingContentType;
   String userId;
+
+  TypingStatus(
+    int sentTime,
+    String typingContentType,
+    String userId,
+  ) {
+    this.sentTime = sentTime;
+    this.typingContentType = typingContentType;
+    this.userId = userId;
+  }
+
+  factory TypingStatus.fromJson(Map<dynamic, dynamic> json) {
+    TypingStatus status = TypingStatus(
+      json['sentTime'],
+      json['typingContentType'],
+      json['userId'],
+    );
+    return status;
+  }
 }
+
+T listConvert<T>(Map<String, dynamic> json) {}

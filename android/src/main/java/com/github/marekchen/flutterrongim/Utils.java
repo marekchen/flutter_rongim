@@ -1,5 +1,7 @@
 package com.github.marekchen.flutterrongim;
 
+import android.util.Log;
+
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -53,25 +55,28 @@ class Utils {
         map.put("targetId", message.getTargetId());
         map.put("conversationType", message.getConversationType().getValue());
         Map<String, Object> content = null;
-        switch (message.getObjectName()) {
-            case "RC:TxtMsg":
-                content = textMessageToMap((TextMessage) message.getContent());
-                break;
-            case "RC:LBSMsg":
-                content = lbsMessageToMap((LocationMessage) message.getContent());
-                break;
-            case "RC:ImgMsg":
-                content = imageMessageToMap((ImageMessage) message.getContent());
-                break;
-            case "RC:VcMsg":
-                content = voiceMessageToMap((VoiceMessage) message.getContent());
-                break;
-            case "RC:FileMsg":
-                content = fileMessageToMap((FileMessage) message.getContent());
-                break;
-            case "RC:RcNtf":
-                //content = fileMessageToMap((RecallNotificationMessage) message.getContent());
-                break;
+        Log.i("chenpei", message.toString());
+        if(message.getObjectName() != null) {
+            switch (message.getObjectName()) {
+                case "RC:TxtMsg":
+                    content = textMessageToMap((TextMessage) message.getContent());
+                    break;
+                case "RC:LBSMsg":
+                    content = lbsMessageToMap((LocationMessage) message.getContent());
+                    break;
+                case "RC:ImgMsg":
+                    content = imageMessageToMap((ImageMessage) message.getContent());
+                    break;
+                case "RC:VcMsg":
+                    content = voiceMessageToMap((VoiceMessage) message.getContent());
+                    break;
+                case "RC:FileMsg":
+                    content = fileMessageToMap((FileMessage) message.getContent());
+                    break;
+                case "RC:RcNtf":
+                    //content = fileMessageToMap((RecallNotificationMessage) message.getContent());
+                    break;
+            }
         }
         if (content != null) {
             map.put("content", content);
@@ -91,13 +96,13 @@ class Utils {
         return map;
     }
 
-    static Map<String, Object> textMessageToMap(TextMessage message) {
+    private static Map<String, Object> textMessageToMap(TextMessage message) {
         Map<String, Object> map = new HashMap<>();
         map.put("content", message.getContent());
         return map;
     }
 
-    static Map<String, Object> lbsMessageToMap(LocationMessage message) {
+    private static Map<String, Object> lbsMessageToMap(LocationMessage message) {
         Map<String, Object> map = new HashMap<>();
         map.put("lat", message.getLat());
         map.put("lng", message.getLng());
@@ -106,7 +111,7 @@ class Utils {
         return map;
     }
 
-    static Map<String, Object> imageMessageToMap(ImageMessage message) {
+    private static Map<String, Object> imageMessageToMap(ImageMessage message) {
         Map<String, Object> map = new HashMap<>();
         if (message.getMediaUrl() != null) {
             map.put("mediaUrl", message.getMediaUrl().toString());
@@ -124,7 +129,7 @@ class Utils {
         return map;
     }
 
-    static Map<String, Object> voiceMessageToMap(VoiceMessage message) {
+    private static Map<String, Object> voiceMessageToMap(VoiceMessage message) {
         Map<String, Object> map = new HashMap<>();
         map.put("duration", message.getDuration());
         if (message.getUri() != null) {
@@ -133,7 +138,7 @@ class Utils {
         return map;
     }
 
-    static Map<String, Object> fileMessageToMap(FileMessage message) {
+    private static Map<String, Object> fileMessageToMap(FileMessage message) {
         Map<String, Object> map = new HashMap<>();
         if (message.getMediaUrl() != null) {
             map.put("mediaUrl", message.getMediaUrl().toString());
