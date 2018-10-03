@@ -70,12 +70,14 @@ class ResultCallback<T> {
   }
 }
 
-class ConnectCallback extends ResultCallback<bool> {
+class ConnectCallback extends ResultCallback<String> {
+
   // callbackType: onTokenIncorrect,onSuccess,onError
-  ConnectCallback(bool value,
+  ConnectCallback(bool isSuccess,
       String callbackType,
-      bool result,
-      ErrorCode errorCode,) : super(value, callbackType, result, errorCode);
+      String result,
+      ErrorCode errorCode,)
+      : super(isSuccess, callbackType, result, errorCode);
 
   factory ConnectCallback.fromJson(Map<dynamic, dynamic> json) {
     print("chenpei" + json.toString());

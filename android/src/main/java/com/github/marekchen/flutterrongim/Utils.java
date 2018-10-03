@@ -12,6 +12,7 @@ import java.util.Map;
 import io.rong.imlib.RongIMClient;
 import io.rong.imlib.model.Conversation;
 import io.rong.imlib.model.Message;
+import io.rong.imlib.model.MessageContent;
 import io.rong.message.FileMessage;
 import io.rong.message.ImageMessage;
 import io.rong.message.LocationMessage;
@@ -76,42 +77,44 @@ class Utils {
         map.put("senderUserId", conversation.getSenderUserId());
         map.put("senderUserName", conversation.getSenderUserName());
         map.put("latestMessageId", conversation.getLatestMessageId());
-        // TODO
-        //map.put("latestMessage",conversation.getLatestMessage());
+        map.put("latestMessage", messageContentToMap(conversation.getObjectName(), conversation.getLatestMessage()));
         map.put("draft", conversation.getDraft());
         map.put("notificationStatus", conversation.getNotificationStatus().getValue());
         map.put("mentionedCount", conversation.getMentionedCount());
         return map;
     }
 
+    static Map<String, Object> messageContentToMap(String objectName, MessageContent messageContent) {
+        Map<String, Object> content = null;
+        switch (objectName) {
+            case "RC:TxtMsg":
+                content = textMessageToMap((TextMessage) messageContent);
+                break;
+            case "RC:LBSMsg":
+                content = lbsMessageToMap((LocationMessage) messageContent);
+                break;
+            case "RC:ImgMsg":
+                content = imageMessageToMap((ImageMessage) messageContent);
+                break;
+            case "RC:VcMsg":
+                content = voiceMessageToMap((VoiceMessage) messageContent);
+                break;
+            case "RC:FileMsg":
+                content = fileMessageToMap((FileMessage) messageContent);
+                break;
+            case "RC:RcNtf":
+                //content = fileMessageToMap((RecallNotificationMessage) message.getContent());
+                break;
+        }
+        return content;
+    }
+
     static Map<String, Object> messageToMap(Message message) {
         Map<String, Object> map = new HashMap<>();
         map.put("targetId", message.getTargetId());
         map.put("conversationType", message.getConversationType().getValue());
-        Map<String, Object> content = null;
         Log.i("chenpei", message.toString());
-        if (message.getObjectName() != null) {
-            switch (message.getObjectName()) {
-                case "RC:TxtMsg":
-                    content = textMessageToMap((TextMessage) message.getContent());
-                    break;
-                case "RC:LBSMsg":
-                    content = lbsMessageToMap((LocationMessage) message.getContent());
-                    break;
-                case "RC:ImgMsg":
-                    content = imageMessageToMap((ImageMessage) message.getContent());
-                    break;
-                case "RC:VcMsg":
-                    content = voiceMessageToMap((VoiceMessage) message.getContent());
-                    break;
-                case "RC:FileMsg":
-                    content = fileMessageToMap((FileMessage) message.getContent());
-                    break;
-                case "RC:RcNtf":
-                    //content = fileMessageToMap((RecallNotificationMessage) message.getContent());
-                    break;
-            }
-        }
+        Map<String, Object> content = messageContentToMap(message.getObjectName(), message.getContent());
         if (content != null) {
             map.put("content", content);
         }
