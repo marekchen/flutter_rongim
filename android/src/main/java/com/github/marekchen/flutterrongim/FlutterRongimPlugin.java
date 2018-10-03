@@ -44,6 +44,11 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
 
     private static Context mContext;
 
+    public static void init(Context context) {
+        Log.i("chenpei", "init");
+        RongIMClient.init(context);
+    }
+
     /**
      * Plugin registration.
      */
@@ -61,9 +66,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
     @Override
     public void onMethodCall(MethodCall methodCall, final Result result) {
         switch (methodCall.method) {
-            case "init":
-                init(methodCall, result);
-                break;
             case "connect":
                 connect(methodCall, result);
                 break;
@@ -226,10 +228,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
         }
     }
 
-    private void init(MethodCall methodCall, final Result result) {
-        RongIMClient.init(mContext);
-    }
-
     private void connect(MethodCall methodCall, final Result result) {
         String token = methodCall.argument("token");
         Log.i("chenpei", token);
@@ -246,6 +244,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
             public void onSuccess(String s) {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", true);
+                re.put("result", s);
                 re.put("callbackType", "onSuccess");
                 result.success(re);
             }
@@ -370,7 +369,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", false);
                 re.put("callbackType", "onError");
-                re.put("result", false);
                 re.put("errorCode", errorCodeToMap(errorCode));
                 result.success(re);
             }
@@ -460,8 +458,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", true);
                 re.put("callbackType", "onSuccess");
-                // TODO
-                re.put("result", conversation);
+                re.put("result", conversationToMap(conversation));
                 result.success(re);
             }
 
@@ -470,7 +467,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", false);
                 re.put("callbackType", "onError");
-                re.put("result", false);
                 re.put("errorCode", errorCodeToMap(errorCode));
                 result.success(re);
             }
@@ -486,8 +482,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", true);
                 re.put("callbackType", "onSuccess");
-                // TODO
-                re.put("result", conversations);
+                re.put("result", conversationsToMap(conversations));
                 result.success(re);
             }
 
@@ -514,8 +509,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", true);
                 re.put("callbackType", "onSuccess");
-                // TODO
-                re.put("result", conversations);
+                re.put("result", conversationsToMap(conversations));
                 result.success(re);
             }
 
@@ -574,7 +568,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", false);
                 re.put("callbackType", "onError");
-                re.put("result", false);
                 re.put("errorCode", errorCodeToMap(errorCode));
                 result.success(re);
             }
@@ -600,7 +593,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", false);
                 re.put("callbackType", "onError");
-                re.put("result", false);
                 re.put("errorCode", errorCodeToMap(errorCode));
                 result.success(re);
             }
@@ -699,7 +691,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", false);
                 re.put("callbackType", "onError");
-                re.put("result", false);
                 re.put("errorCode", errorCodeToMap(errorCode));
                 result.success(re);
             }
@@ -749,7 +740,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", false);
                 re.put("callbackType", "onError");
-                re.put("result", false);
                 re.put("errorCode", errorCodeToMap(errorCode));
                 result.success(re);
             }
@@ -775,7 +765,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                     Map<String, Object> re = new HashMap<>();
                     re.put("isSuccess", false);
                     re.put("callbackType", "onError");
-                    re.put("result", false);
                     re.put("errorCode", errorCodeToMap(errorCode));
                     result.success(re);
                 }
@@ -797,7 +786,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
                     Map<String, Object> re = new HashMap<>();
                     re.put("isSuccess", false);
                     re.put("callbackType", "onError");
-                    re.put("result", false);
                     re.put("errorCode", errorCodeToMap(errorCode));
                     result.success(re);
                 }
@@ -814,7 +802,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
 
     @Override
     public void onListen(Object arguments, final EventChannel.EventSink eventSink) {
-        Log.i(TAG, "onListen");
+        Log.i(TAG, "onListen:" + arguments);
         switch ((String) argument(arguments, "method")) {
             case "sendMessage":
                 sendMessage(arguments, eventSink);
@@ -1124,6 +1112,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
         RongIMClient.setRCLogInfoListener(new RongIMClient.RCLogInfoListener() {
             @Override
             public void onRCLogInfoOccurred(String s) {
+                Log.i("chenpei", "setRCLogInfoListener:" + s);
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", true);
                 re.put("callbackType", "onRCLogInfoOccurred");

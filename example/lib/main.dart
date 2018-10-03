@@ -15,6 +15,7 @@ class _MyAppState extends State<MyApp> {
   String text3 = "33";
   String text4 = "44";
   String text5 = "55";
+  String text6 = "66";
 
   setText(t) {
     setState(() {
@@ -24,7 +25,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    FlutterRongim.init();
     FlutterRongim.setRCLogInfoListener().listen((ResultCallback callback) {
       print(callback.result);
     });
@@ -34,16 +34,28 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         backgroundColor: Colors.white,
-        body: Column(
+        body: ListView(
           children: <Widget>[
+            Text(text),
             RaisedButton(
               onPressed: () {
                 FlutterRongim.connect(
-                    "UtliBA8db8oP2ijKxStZ7EkjF5Ub3Bvi/1IqceRCqTWJLA5dz2WzxkKgzXCgmVoTZMu5NpT4/fgWIN0Muf1MsB+CsXSLBMTF");
+                        "DeXCHkAUCq1+/KnE2kcjPymK9zfNTKzs1o7YBRltabb7QpIqeYzw1SbscpOT3ksI32e6F0aOrcnSu/kvvmxEPQ==")
+                    .then((ConnectCallback callback) {
+                  setState(() {
+                    print("chenpei" + callback.isSuccess.toString());
+                    if (callback.isSuccess) {
+                      print(callback.toMap());
+                      text = callback.toMap().toString();
+                    } else {
+                      print(callback.toMap());
+                      text = callback.toMap().toString();
+                    }
+                  });
+                });
               },
               child: Text("connect"),
             ),
-            Text(text),
             Text(text2),
             RaisedButton(
               onPressed: () {
@@ -58,8 +70,8 @@ class _MyAppState extends State<MyApp> {
                       print(callback.result.toMap());
                       text2 = callback.result.toMap().toString();
                     } else {
-                      print(callback.result.toString());
-                      text2 = callback.result.toString();
+                      print(callback.toMap());
+                      text2 = callback.toMap().toString();
                     }
                   });
                 });
@@ -79,10 +91,10 @@ class _MyAppState extends State<MyApp> {
                     setState(() {
                       if (callback.isSuccess) {
                         print(callback.result.toMap());
-                        text2 = callback.result.toMap().toString();
+                        text3 = callback.result.toMap().toString();
                       } else {
-                        print(callback.result.toString());
-                        text2 = callback.result.toString();
+                        print(callback.toMap());
+                        text3 = callback.toMap().toString();
                       }
                     });
                   });
@@ -102,10 +114,10 @@ class _MyAppState extends State<MyApp> {
                     setState(() {
                       if (callback.isSuccess) {
                         print(callback.result.toMap());
-                        text2 = callback.result.toMap().toString();
+                        text4 = callback.result.toMap().toString();
                       } else {
-                        print(callback.result.toString());
-                        text2 = callback.result.toString();
+                        print(callback.toMap().toString());
+                        text4 = callback.toMap().toString();
                       }
                     });
                   });
@@ -130,7 +142,10 @@ class _MyAppState extends State<MyApp> {
                     print("chenpei" + callback.isSuccess.toString());
                     if (callback.isSuccess) {
                       print(callback.result);
-                      text5 = callback.result.toString();
+                      text5 = callback.result
+                          .map((conversation) => conversation.toMap())
+                          .toList()
+                          .toString();
                     } else {
                       print(callback.result.toString());
                       text5 = callback.result.toString();
@@ -139,6 +154,29 @@ class _MyAppState extends State<MyApp> {
                 });
               },
               child: Text("getConversationList"),
+            ),
+            Text(text6),
+            RaisedButton(
+              onPressed: () {
+                FlutterRongim.getHistoryMessages(
+                        "chenpei2", ConversationType.PRIVATE, 0, 100)
+                    .then((ResultCallback<List<Message>> callback) {
+                  setState(() {
+                    print("chenpei" + callback.isSuccess.toString());
+                    if (callback.isSuccess) {
+                      print(callback.result);
+                      text6 = callback.result
+                          .map((message) => message.toMap())
+                          .toList()
+                          .toString();
+                    } else {
+                      print(callback.result.toString());
+                      text6 = callback.result.toString();
+                    }
+                  });
+                });
+              },
+              child: Text("getHistoryMessages"),
             ),
           ],
         ),

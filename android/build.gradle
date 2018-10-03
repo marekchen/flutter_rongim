@@ -40,4 +40,5 @@ android {
 
 dependencies {
     implementation files('libs/Rong_IMLib.jar')
+    implementation 'com.android.support:support-compat:27.1.1'
 }

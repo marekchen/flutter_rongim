@@ -17,10 +17,6 @@ class FlutterRongim {
   static EventChannel _channel_event =
   EventChannel('plugins.marekchen.github.com/flutter_rongim_event');
 
-  static Future<void> init() async {
-    await _channel.invokeMethod('init');
-  }
-
   static Future<ConnectCallback> connect(String token) async {
     print("chenpei" + token);
     final Map<dynamic, dynamic> result = await _channel
@@ -37,40 +33,41 @@ class FlutterRongim {
     await _channel.invokeMethod('logout');
   }
 
-  static Future<ResultCallback> clearMessages(String targetId,
+  static Future<ResultCallback<bool>> clearMessages(String targetId,
       ConversationType conversationType) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('clearMessages', <String, dynamic>{
       'targetId': targetId,
       'conversationType': conversationType.index,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> deleteMessages(String targetId,
+  static Future<ResultCallback<bool>> deleteMessages(String targetId,
       ConversationType conversationType) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('deleteMessages', <String, dynamic>{
       'targetId': targetId,
       'conversationType': conversationType.index,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
   // dart don't support overload
-  static Future<ResultCallback> deleteMessagesByIds(
+  static Future<ResultCallback<bool>> deleteMessagesByIds(
       List<int> messageIds) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('deleteMessages', <String, dynamic>{
       'messageIds': messageIds,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> getHistoryMessages(String targetId,
+  static Future<ResultCallback<List<Message>>> getHistoryMessages(
+      String targetId,
       ConversationType conversationType, int oldestMessageId, int count) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('getHistoryMessages', <String, dynamic>{
@@ -80,11 +77,12 @@ class FlutterRongim {
       'count': count,
     });
     // TODO
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<List<Message>> callback = new ResultCallback<
+        List<Message>>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> clearMessagesUnreadStatus(String targetId,
+  static Future<ResultCallback<bool>> clearMessagesUnreadStatus(String targetId,
       ConversationType conversationType,
       [int timestamp]) async {
     Map<String, dynamic> arguments = {
@@ -94,43 +92,42 @@ class FlutterRongim {
     arguments.putIfAbsent("timestamp", () => timestamp);
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('clearMessagesUnreadStatus', arguments);
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> setMessageReceivedStatus(int messageId,
+  static Future<ResultCallback<bool>> setMessageReceivedStatus(int messageId,
       ReceivedStatus receivedStatus,) async {
     final Map<dynamic, dynamic> result = await _channel
         .invokeMethod('setMessageReceivedStatus', <String, dynamic>{
       'messageId': messageId,
       'receivedStatus': pow(2, receivedStatus.index),
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> getConversation(String targetId,
+  static Future<ResultCallback<Conversation>> getConversation(String targetId,
       ConversationType conversationType) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('getConversation', <String, dynamic>{
       'targetId': targetId,
       'conversationType': conversationType.index,
     });
-    ResultCallback callback = ResultCallback.fromJson(result, Conversation);
+    ResultCallback<Conversation> callback = new ResultCallback<
+        Conversation>.fromJson(result);
     return callback;
   }
 
   static Future<ResultCallback<List<Conversation>>> getConversationList(
       List<ConversationType> conversationTypes) async {
-    List<int> conversationTypeList = List();
-    for (ConversationType conversationType in conversationTypes) {
-      conversationTypeList.add(conversationType.index);
-    }
+    List<int> conversationTypeList = conversationTypes.map((
+        conversationType) => conversationType.index).toList();
     final Map<dynamic, dynamic> result = await _channel.invokeMethod(
         'getConversationList',
         <String, dynamic>{"conversationTypes": conversationTypeList});
-    // TODO
-    ResultCallback callback = ResultCallback.fromJson(result, List);
+    ResultCallback<List<Conversation>> callback = new ResultCallback<
+        List<Conversation>>.fromJson(result);
     return callback;
   }
 
@@ -139,11 +136,8 @@ class FlutterRongim {
       List<ConversationType> conversationTypes,
       int timeStamp,
       int count) async {
-    List<int> conversationTypeList = List();
-    for (ConversationType conversationType in conversationTypes) {
-      conversationTypeList.add(conversationType.index);
-    }
-    // TODO
+    List<int> conversationTypeList = conversationTypes.map((
+        conversationType) => conversationType.index).toList();
     final Map<dynamic, dynamic> result = await _channel
         .invokeMethod('getConversationListByPage', <String, dynamic>{
       'targetId': targetId,
@@ -151,8 +145,8 @@ class FlutterRongim {
       'timeStamp': timeStamp,
       'count': count,
     });
-    // TODO
-    ResultCallback callback = ResultCallback.fromJson(result, List);
+    ResultCallback<List<Conversation>> callback = new ResultCallback<
+        List<Conversation>>.fromJson(result);
     return callback;
   }
 
@@ -163,7 +157,7 @@ class FlutterRongim {
       'targetId': targetId,
       'conversationType': conversationType,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
@@ -176,7 +170,7 @@ class FlutterRongim {
       'conversationType': conversationType,
     });
     ResultCallback<ConversationNotificationStatus> callback =
-    ResultCallback.fromJson(result, ConversationNotificationStatus);
+    new ResultCallback<ConversationNotificationStatus>.fromJson(result);
     return callback;
   }
 
@@ -192,18 +186,18 @@ class FlutterRongim {
       'notificationStatus': notificationStatus,
     });
     ResultCallback<ConversationNotificationStatus> callback =
-    ResultCallback.fromJson(result, ConversationNotificationStatus);
+    new ResultCallback<ConversationNotificationStatus>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> setNotificationQuietHours(String startTime,
+  static Future<ResultCallback<bool>> setNotificationQuietHours(String startTime,
       int spanMinutes) async {
     final Map<dynamic, dynamic> result = await _channel
         .invokeMethod('setNotificationQuietHours', <String, dynamic>{
       'startTime': startTime,
       'spanMinutes': spanMinutes,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
@@ -211,7 +205,7 @@ class FlutterRongim {
     await _channel.invokeMethod('removeNotificationQuietHours');
   }
 
-  static Future<ResultCallback> saveTextMessageDraft(String targetId,
+  static Future<ResultCallback<bool>> saveTextMessageDraft(String targetId,
       ConversationType conversationType, String content) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('saveTextMessageDraft', <String, dynamic>{
@@ -219,22 +213,23 @@ class FlutterRongim {
       'conversationType': conversationType,
       'content': content,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> getTextMessageDraft(String targetId,
+  static Future<ResultCallback<String>> getTextMessageDraft(String targetId,
       ConversationType conversationType) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('getTextMessageDraft', <String, dynamic>{
       'targetId': targetId,
       'conversationType': conversationType,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<String> callback = new ResultCallback<String>.fromJson(
+        result);
     return callback;
   }
 
-  static Future<ResultCallback> setConversationToTop(String id,
+  static Future<ResultCallback<bool>> setConversationToTop(String id,
       ConversationType conversationType, bool isTop, bool needCreate) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('setConversationToTop', <String, dynamic>{
@@ -243,145 +238,151 @@ class FlutterRongim {
       'isTop': isTop,
       'needCreate': needCreate,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<bool> callback = new ResultCallback<bool>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> getTotalUnreadCount() async {
+  static Future<ResultCallback<int>> getTotalUnreadCount() async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('getTotalUnreadCount');
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<int> callback = new ResultCallback<int>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> getUnreadCount(String targetId,
+  static Future<ResultCallback<int>> getUnreadCount(String targetId,
       ConversationType conversationType) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('getUnreadCount', <String, dynamic>{
       'targetId': targetId,
       'conversationType': conversationType,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<int> callback = new ResultCallback<int>.fromJson(result);
     return callback;
   }
 
   // dart don't support overload
-  static Future<ResultCallback> getUnreadCountByTypes(
+  static Future<ResultCallback<int>> getUnreadCountByTypes(
       List<ConversationType> conversationTypes) async {
-    List<int> conversationTypeList = List();
-    for (ConversationType conversationType in conversationTypes) {
-      conversationTypeList.add(conversationType.index);
-    }
+    List<int> conversationTypeList = conversationTypes.map((
+        conversationType) => conversationType.index).toList();
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('getUnreadCount', <String, dynamic>{
       'conversationTypes': conversationTypeList,
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
+    ResultCallback<int> callback = new ResultCallback<int>.fromJson(result);
     return callback;
   }
 
-  static Future<ResultCallback> sendTypingStatus(String targetId,
+  static Future<void> sendTypingStatus(String targetId,
       ConversationType conversationType, String typingContentType) async {
     final Map<dynamic, dynamic> result =
     await _channel.invokeMethod('sendTypingStatus', <String, dynamic>{
       'targetId': targetId,
       'conversationType': conversationType,
-      'typingContentType': typingContentType,
+      'typingContentType': typingContentType, // TODO ?
     });
-    ResultCallback callback = ResultCallback.fromJson(result);
-    return callback;
   }
 
-  static ResultCallback _parseResponseMessage(Map<dynamic, dynamic> result) {
-    ResultCallback callback = ResultCallback.fromJson(result, Message);
-    return callback;
-  }
-
-  static Stream<ResultCallback> sendMessage(Message message) {
+  static Stream<ResultCallback<Message>> sendMessage(Message message) {
     Map<String, dynamic> arguments = message.toMap();
     arguments.putIfAbsent("method", () => "sendMessage");
-    Stream<ResultCallback> _onMessageCallback;
+    print("chenpei" + arguments.toString());
+    Stream<ResultCallback<Message>> _onMessageCallback;
     if (_onMessageCallback == null) {
       _onMessageCallback = _channel_event
           .receiveBroadcastStream(arguments)
-          .map((event) => _parseResponseMessage(event));
+          .map((event) =>
+      new ResultCallback<Message>.fromJson(
+          event));
     }
     return _onMessageCallback;
   }
 
-  static Stream<ResultCallback> sendLocationMessage(Message message) {
+  static Stream<ResultCallback<Message>> sendLocationMessage(Message message) {
     Map<String, dynamic> arguments = message.toMap();
     arguments.putIfAbsent("method", () => "sendLocationMessage");
-    Stream<ResultCallback> _onMessageCallback;
+    Stream<ResultCallback<Message>> _onMessageCallback;
     if (_onMessageCallback == null) {
       _onMessageCallback = _channel_event
           .receiveBroadcastStream(arguments)
-          .map((dynamic event) => _parseResponseMessage(event));
+          .map((dynamic event) => new ResultCallback<Message>.fromJson(
+          event));
     }
     return _onMessageCallback;
   }
 
-  static Stream<ResultCallback> sendImageMessage(Message message) {
+  static Stream<ResultCallback<Message>> sendImageMessage(Message message) {
     Map<String, dynamic> arguments = message.toMap();
     arguments.putIfAbsent("method", () => "sendImageMessage");
-    Stream<ResultCallback> _onMessageCallback;
+    Stream<ResultCallback<Message>> _onMessageCallback;
     if (_onMessageCallback == null) {
       _onMessageCallback = _channel_event
           .receiveBroadcastStream(arguments)
-          .map((dynamic event) => _parseResponseMessage(event));
+          .map((dynamic event) => new ResultCallback<Message>.fromJson(
+          event));
     }
     return _onMessageCallback;
   }
 
-  static Stream<ResultCallback> sendMediaMessage(Message message) {
+  static Stream<ResultCallback<Message>> sendMediaMessage(Message message) {
     Map<String, dynamic> arguments = message.toMap();
     arguments.putIfAbsent("method", () => "sendMediaMessage");
-    Stream<ResultCallback> _onMessageCallback;
+    Stream<ResultCallback<Message>> _onMessageCallback;
     if (_onMessageCallback == null) {
       _onMessageCallback = _channel_event
           .receiveBroadcastStream(arguments)
-          .map((dynamic event) => _parseResponseMessage(event));
+          .map((dynamic event) => new ResultCallback<Message>.fromJson(
+          event));
     }
     return _onMessageCallback;
   }
 
-  static Stream<ResultCallback> setOnReceiveMessageListener() {
-    Stream<ResultCallback> _onMessageCallback;
+  static Stream<ResultCallback<Message>> setOnReceiveMessageListener() {
+    Map<String, dynamic> arguments = new Map();
+    arguments.putIfAbsent("method", () => "setOnReceiveMessageListener");
+    Stream<ResultCallback<Message>> _onMessageCallback;
     if (_onMessageCallback == null) {
       _onMessageCallback = _channel_event
-          .receiveBroadcastStream()
-          .map((dynamic event) => _parseResponseMessage(event));
+          .receiveBroadcastStream(arguments)
+          .map((dynamic event) => new ResultCallback<Message>.fromJson(
+          event));
     }
     return _onMessageCallback;
   }
 
-  static Stream<ResultCallback> setConnectionStatusListener() {
-    Stream<ResultCallback> _onMessageCallback;
+  static Stream<ResultCallback<ConnectionStatus>> setConnectionStatusListener() {
+    Map<String, dynamic> arguments = new Map();
+    arguments.putIfAbsent("method", () => "setConnectionStatusListener");
+    Stream<ResultCallback<ConnectionStatus>> _onMessageCallback;
     if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event.receiveBroadcastStream().map(
-              (dynamic event) =>
-              ResultCallback.fromJson(event, ConversationNotificationStatus));
+      _onMessageCallback = _channel_event
+          .receiveBroadcastStream(arguments)
+          .map((dynamic event) => new ResultCallback<ConnectionStatus>.fromJson(event));
     }
     return _onMessageCallback;
   }
 
   // TODO
-  static Stream<ResultCallback> setTypingStatusListener() {
-    Stream<ResultCallback> _onMessageCallback;
+  static Stream<ResultCallback<TypingStatusListener>> setTypingStatusListener() {
+    Map<String, dynamic> arguments = new Map();
+    arguments.putIfAbsent("method", () => "setTypingStatusListener");
+    Stream<ResultCallback<TypingStatusListener>> _onMessageCallback;
     if (_onMessageCallback == null) {
       _onMessageCallback = _channel_event
-          .receiveBroadcastStream()
-          .map((dynamic event) => ResultCallback.fromJson(event));
+          .receiveBroadcastStream(arguments)
+          .map((dynamic event) => new ResultCallback<TypingStatusListener>.fromJson(event));
     }
     return _onMessageCallback;
   }
 
-  static Stream<ResultCallback> setRCLogInfoListener() {
-    Stream<ResultCallback> _onMessageCallback;
+  static Stream<ResultCallback<String>> setRCLogInfoListener() {
+    Map<String, dynamic> arguments = new Map();
+    arguments.putIfAbsent("method", () => "setRCLogInfoListener");
+    Stream<ResultCallback<String>> _onMessageCallback;
     if (_onMessageCallback == null) {
       _onMessageCallback = _channel_event
-          .receiveBroadcastStream()
-          .map((dynamic event) => ResultCallback.fromJson(event));
+          .receiveBroadcastStream(arguments)
+          .map((dynamic event) => new ResultCallback<String>.fromJson(event));
     }
     return _onMessageCallback;
   }

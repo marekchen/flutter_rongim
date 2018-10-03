@@ -6,37 +6,51 @@ class ResultCallback<T> {
   T result;
   ErrorCode errorCode;
 
-  ResultCallback(
-    bool isSuccess,
-    String callbackType,
-    T result,
-    ErrorCode errorCode,
-  ) {
+  ResultCallback(bool isSuccess,
+      String callbackType,
+      T result,
+      ErrorCode errorCode,) {
     this.isSuccess = isSuccess;
     this.callbackType = callbackType;
     this.result = result;
     this.errorCode = errorCode;
   }
 
-  factory ResultCallback.fromJson(Map<dynamic, dynamic> json, [Type type]) {
+  factory ResultCallback.fromJson(Map<dynamic, dynamic> json) {
     print("chenpei" + json.toString());
     var result = json['result'];
-    if (type != null) {
-      switch (type) {
-        case List:
-          break;
-        case Conversation:
-          result = Conversation.fromJson(result);
-          break;
-        case ConversationNotificationStatus:
-          result = conversationTypeFromInt(result);
-          break;
-        //case TypingStatus:
-        //result =
-        default:
-      }
+    print("chenpei" + "Type:" + T.toString());
+    switch (T) {
+      case Conversation:
+        result = Conversation.fromJson(result);
+        break;
+      case ConversationNotificationStatus:
+        result = conversationTypeFromInt(result);
+        break;
+      case ConnectionStatus:
+        result = connectionStatusFromInt(result);
+        break;
+      case Message:
+        result = Message.fromJson(result);
+        break;
+    //case TypingStatus:
+    //result =
+      default:
+      // 判断是否是list类型，取出list 子类型
+        if (getListType(T) != null) {
+          switch (getListType(T)) {
+            case "Conversation":
+              result = (result as List<dynamic>).map((item) =>
+                  Conversation.fromJson(item)).toList();
+              break;
+            case "Message":
+              result = (result as List<dynamic>).map((item) =>
+                  Message.fromJson(item)).toList();
+              break;
+          }
+        }
     }
-    ResultCallback callback = ResultCallback(
+    ResultCallback<T> callback = ResultCallback(
       json['isSuccess'],
       json['callbackType'],
       result,
@@ -44,16 +58,24 @@ class ResultCallback<T> {
     );
     return callback;
   }
+
+  toMap() {
+    Map<String, dynamic> map = <String, dynamic>{
+      "isSuccess": isSuccess,
+      "callbackType": callbackType,
+      "result": result,
+      "errorCode": errorCode,
+    };
+    return map;
+  }
 }
 
 class ConnectCallback extends ResultCallback<bool> {
   // callbackType: onTokenIncorrect,onSuccess,onError
-  ConnectCallback(
-    bool value,
-    String callbackType,
-    bool result,
-    ErrorCode errorCode,
-  ) : super(value, callbackType, result, errorCode);
+  ConnectCallback(bool value,
+      String callbackType,
+      bool result,
+      ErrorCode errorCode,) : super(value, callbackType, result, errorCode);
 
   factory ConnectCallback.fromJson(Map<dynamic, dynamic> json) {
     print("chenpei" + json.toString());
@@ -71,13 +93,11 @@ class SendMessageCallback extends ResultCallback<Message> {
   // callbackType: onAttached,onSuccess,onError,onProgress
   int progress;
 
-  SendMessageCallback(
-    bool value,
-    String callbackType,
-    Message result,
-    ErrorCode errorCode,
-    int progress,
-  ) : super(value, callbackType, result, errorCode) {
+  SendMessageCallback(bool value,
+      String callbackType,
+      Message result,
+      ErrorCode errorCode,
+      int progress,) : super(value, callbackType, result, errorCode) {
     this.progress = progress;
   }
 
@@ -104,6 +124,9 @@ class ErrorCode {
   }
 
   factory ErrorCode.fromJson(Map<dynamic, dynamic> json) {
+    if (json == null || json.isEmpty) {
+      return null;
+    }
     ErrorCode errorCode = ErrorCode(
       json['value'],
       json['message'],
@@ -171,15 +194,16 @@ class Conversation {
   });
 
   factory Conversation.fromJson(Map<dynamic, dynamic> json) {
+    print("chenpei:" + json.toString());
     Conversation conversation = Conversation(
       conversationType: conversationTypeFromInt(json['conversationType']),
-      targetId: json['target'],
+      targetId: json['targetId'],
       conversationTitle: json['conversationTitle'],
       portraitUrl: json['portraitUrl'],
       unreadMessageCount: json['unreadMessageCount'],
       isTop: json['isTop'],
       receivedStatus: receivedStatusFromInt(json['receivedStatus']),
-      sentStatus: sentStatusFromInt(json['target']),
+      sentStatus: sentStatusFromInt(json['sentStatus']),
       receivedTime: json['receivedTime'],
       sentTime: json['sentTime'],
       senderUserId: json['senderUserId'],
@@ -189,10 +213,36 @@ class Conversation {
           json['objectName'], json['latestMessage']),
       draft: json['draft'],
       notificationStatus:
-          conversationNotificationStatusFromInt(json['notificationStatus']),
+      conversationNotificationStatusFromInt(json['notificationStatus']),
       mentionedCount: json['mentionedCount'],
     );
     return conversation;
+  }
+
+  toMap() {
+    Map<String, dynamic> map = <String, dynamic>{
+      "targetId": targetId,
+      "conversationType": conversationType,
+    };
+    map.putIfAbsent("conversationTitle", () => conversationTitle);
+    map.putIfAbsent("portraitUrl", () => portraitUrl);
+    map.putIfAbsent("unreadMessageCount", () => unreadMessageCount);
+    map.putIfAbsent("receivedStatus", () => receivedStatus);
+    map.putIfAbsent("sentStatus", () => sentStatus);
+    map.putIfAbsent("receivedTime", () => receivedTime);
+    map.putIfAbsent("sentTime", () => sentTime);
+    map.putIfAbsent("isTop", () => isTop);
+    map.putIfAbsent("senderUserId", () => senderUserId);
+    map.putIfAbsent("senderUserName", () => senderUserName);
+
+    map.putIfAbsent("latestMessageId", () => latestMessageId);
+    map.putIfAbsent("draft", () => draft);
+    if (latestMessage != null) {
+      map.putIfAbsent("latestMessage", () => latestMessage.toMap());
+    }
+    map.putIfAbsent("notificationStatus", () => notificationStatus);
+    map.putIfAbsent("mentionedCount", () => mentionedCount);
+    return map;
   }
 }
 
@@ -252,7 +302,7 @@ enum SentStatus {
 
 SentStatus sentStatusFromInt(int value) {
   print("value:" + value.toString());
-  return SentStatus.values.firstWhere((md) => md.index == value);
+  return SentStatus.values.firstWhere((md) => md.index == value ~/ 10);
 }
 
 class Response {
@@ -317,7 +367,7 @@ class MentionedInfo {
 
   toMap() {
     Map<String, dynamic> map = <String, dynamic>{
-      "type": type.index,
+      "type": type,
       "userIdList": userIdList,
       "mentionedContent": mentionedContent,
     };
@@ -384,7 +434,7 @@ class Message {
     map.putIfAbsent("messageId", () => messageId);
     map.putIfAbsent("senderUserId", () => senderUserId);
     if (messageDirection != null) {
-      map.putIfAbsent("messageDirection", () => messageDirection.index);
+      map.putIfAbsent("messageDirection", () => messageDirection);
     }
     map.putIfAbsent("objectName", () => objectName);
 
@@ -413,8 +463,8 @@ class Message {
     return message;
   }
 
-  static MessageContent parseMessageContent(
-      String objectName, Map<dynamic, dynamic> json) {
+  static MessageContent parseMessageContent(String objectName,
+      Map<dynamic, dynamic> json) {
     MessageContent content;
     switch (objectName) {
       case "RC:TxtMsg":
@@ -455,6 +505,9 @@ class TextMessage extends MessageContent {
   }
 
   factory TextMessage.fromJson(Map<dynamic, dynamic> json) {
+    if (json == null) {
+      return null;
+    }
     TextMessage message = TextMessage(
       json['content'],
     );
@@ -514,7 +567,7 @@ class ImageMessage extends MediaMessageContent {
 
   ImageMessage({
     @required Uri thumbUri,
-    @required Uri localUri,
+    Uri localUri,
     bool isFull = true,
   }) : super(localUri) {
     this.thumbUri = thumbUri;
@@ -538,7 +591,7 @@ class ImageMessage extends MediaMessageContent {
   factory ImageMessage.fromJson(Map<dynamic, dynamic> json) {
     ImageMessage message = ImageMessage(
         thumbUri: Uri.parse(json['thumbUri']),
-        localUri: Uri.parse(json['localUri']),
+        localUri: json['localUri'] != null ? Uri.parse(json['localUri']) : null,
         isFull: json['isFull']);
     if (json.containsKey("userInfo")) {
       message.setUserInfo(UserInfo.fromJson(json['userInfo']));
@@ -608,11 +661,9 @@ class TypingStatusListener {
   String targetId;
   List<TypingStatus> typingStatusSet;
 
-  TypingStatusListener(
-    ConversationType conversationType,
-    String targetId,
-    List<TypingStatus> typingStatusSet,
-  ) {
+  TypingStatusListener(ConversationType conversationType,
+      String targetId,
+      List<TypingStatus> typingStatusSet,) {
     this.conversationType = conversationType;
     this.targetId = targetId;
     this.typingStatusSet = typingStatusSet;
@@ -634,11 +685,9 @@ class TypingStatus {
   String typingContentType;
   String userId;
 
-  TypingStatus(
-    int sentTime,
-    String typingContentType,
-    String userId,
-  ) {
+  TypingStatus(int sentTime,
+      String typingContentType,
+      String userId,) {
     this.sentTime = sentTime;
     this.typingContentType = typingContentType;
     this.userId = userId;

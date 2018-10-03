@@ -50,13 +50,47 @@ class Utils {
         }
     }
 
+    static List<Map<String, Object>> conversationsToMap(List<Conversation> conversations) {
+        List<Map<String, Object>> list = new ArrayList<>();
+        if (conversations != null) {
+            for (Conversation conversation : conversations) {
+                list.add(conversationToMap(conversation));
+            }
+        }
+        return list;
+    }
+
+    static Map<String, Object> conversationToMap(Conversation conversation) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("targetId", conversation.getTargetId());
+        map.put("conversationTitle", conversation.getConversationTitle());
+        map.put("conversationType", conversation.getConversationType().getValue());
+        map.put("portraitUrl", conversation.getPortraitUrl());
+        map.put("unreadMessageCount", conversation.getUnreadMessageCount());
+        map.put("isTop", conversation.isTop());
+        map.put("receivedStatus", conversation.getReceivedStatus().getFlag());
+        map.put("sentStatus", conversation.getSentStatus().getValue());
+        map.put("receivedTime", conversation.getReceivedTime());
+        map.put("sentTime", conversation.getSentTime());
+        map.put("objectName", conversation.getObjectName());
+        map.put("senderUserId", conversation.getSenderUserId());
+        map.put("senderUserName", conversation.getSenderUserName());
+        map.put("latestMessageId", conversation.getLatestMessageId());
+        // TODO
+        //map.put("latestMessage",conversation.getLatestMessage());
+        map.put("draft", conversation.getDraft());
+        map.put("notificationStatus", conversation.getNotificationStatus().getValue());
+        map.put("mentionedCount", conversation.getMentionedCount());
+        return map;
+    }
+
     static Map<String, Object> messageToMap(Message message) {
         Map<String, Object> map = new HashMap<>();
         map.put("targetId", message.getTargetId());
         map.put("conversationType", message.getConversationType().getValue());
         Map<String, Object> content = null;
         Log.i("chenpei", message.toString());
-        if(message.getObjectName() != null) {
+        if (message.getObjectName() != null) {
             switch (message.getObjectName()) {
                 case "RC:TxtMsg":
                     content = textMessageToMap((TextMessage) message.getContent());
