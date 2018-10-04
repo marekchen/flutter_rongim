@@ -31,7 +31,7 @@ class _MyAppState extends State<MyApp> {
     return new MaterialApp(
       home: new Scaffold(
         appBar: new AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('RongIm Plugin example app'),
         ),
         backgroundColor: Colors.white,
         body: ListView(
@@ -43,7 +43,6 @@ class _MyAppState extends State<MyApp> {
                         "DeXCHkAUCq1+/KnE2kcjPymK9zfNTKzs1o7YBRltabb7QpIqeYzw1SbscpOT3ksI32e6F0aOrcnSu/kvvmxEPQ==")
                     .then((ConnectCallback callback) {
                   setState(() {
-                    print("chenpei" + callback.isSuccess.toString());
                     if (callback.isSuccess) {
                       print(callback.toMap());
                       text = callback.toMap().toString();
@@ -63,14 +62,13 @@ class _MyAppState extends State<MyApp> {
                 Message message =
                     Message("chenpei2", ConversationType.PRIVATE, content);
                 FlutterRongim.sendMessage(message)
-                    .listen((ResultCallback callback) {
+                    .events.listen((ResultCallback<Message> callback) {
                   setState(() {
-                    print("chenpei" + callback.isSuccess.toString());
                     if (callback.isSuccess) {
-                      print(callback.result.toMap());
+                      print(callback.result.toMap().toString());
                       text2 = callback.result.toMap().toString();
                     } else {
-                      print(callback.toMap());
+                      print(callback.toMap().toString());
                       text2 = callback.toMap().toString();
                     }
                   });
@@ -87,10 +85,10 @@ class _MyAppState extends State<MyApp> {
                   Message message =
                       Message("chenpei2", ConversationType.PRIVATE, content);
                   FlutterRongim.sendImageMessage(message)
-                      .listen((ResultCallback callback) {
+                      .events.listen((ResultCallback callback) {
                     setState(() {
                       if (callback.isSuccess) {
-                        print(callback.result.toMap());
+                        print(callback.result.toMap().toString());
                         text3 = callback.result.toMap().toString();
                       } else {
                         print(callback.toMap());
@@ -110,10 +108,10 @@ class _MyAppState extends State<MyApp> {
                   Message message =
                       Message("chenpei2", ConversationType.PRIVATE, content);
                   FlutterRongim.sendMediaMessage(message)
-                      .listen((ResultCallback callback) {
+                      .events.listen((ResultCallback callback) {
                     setState(() {
                       if (callback.isSuccess) {
-                        print(callback.result.toMap());
+                        print(callback.result.toMap().toString());
                         text4 = callback.result.toMap().toString();
                       } else {
                         print(callback.toMap().toString());
@@ -139,7 +137,6 @@ class _MyAppState extends State<MyApp> {
                 FlutterRongim.getConversationList([ConversationType.PRIVATE])
                     .then((ResultCallback<List<Conversation>> callback) {
                   setState(() {
-                    print("chenpei" + callback.isSuccess.toString());
                     if (callback.isSuccess) {
                       print(callback.result);
                       text5 = callback.result
@@ -162,7 +159,6 @@ class _MyAppState extends State<MyApp> {
                         "chenpei2", ConversationType.PRIVATE, 0, 100)
                     .then((ResultCallback<List<Message>> callback) {
                   setState(() {
-                    print("chenpei" + callback.isSuccess.toString());
                     if (callback.isSuccess) {
                       print(callback.result);
                       text6 = callback.result

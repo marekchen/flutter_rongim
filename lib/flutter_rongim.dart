@@ -10,15 +10,45 @@ part 'dao.dart';
 
 part 'utils.dart';
 
+part 'send_message_task.dart';
+
 class FlutterRongim {
+
+  static String TAG = "FlutterRongim";
+
   static MethodChannel _channel =
   MethodChannel('plugins.marekchen.github.com/flutter_rongim');
+
+  static MethodChannel _channel_send_message =
+  MethodChannel('plugins.marekchen.github.com/flutter_rongim_send_message');
 
   static EventChannel _channel_event =
   EventChannel('plugins.marekchen.github.com/flutter_rongim_event');
 
+  static EventChannel _eventChannelFor(String method) {
+    return EventChannel(
+        'plugins.marekchen.github.com/flutter_rongim_event#$method');
+  }
+
+  static bool _initialized = false;
+
+  static FlutterRongim _instance = FlutterRongim();
+
+  static FlutterRongim get instance => _instance;
+
+  FlutterRongim() {
+    if (_initialized) return;
+    _channel_send_message.setMethodCallHandler((MethodCall call) async {
+      _methodStreamController.add(call);
+    });
+  }
+
+  static final StreamController<MethodCall> _methodStreamController =
+  new StreamController<MethodCall>.broadcast();
+
+  Stream<MethodCall> get _methodStream => _methodStreamController.stream;
+
   static Future<ConnectCallback> connect(String token) async {
-    print("chenpei" + token);
     final Map<dynamic, dynamic> result = await _channel
         .invokeMethod('connect', <String, dynamic>{'token': token});
     ConnectCallback callback = ConnectCallback.fromJson(result);
@@ -190,7 +220,8 @@ class FlutterRongim {
     return callback;
   }
 
-  static Future<ResultCallback<bool>> setNotificationQuietHours(String startTime,
+  static Future<ResultCallback<bool>> setNotificationQuietHours(
+      String startTime,
       int spanMinutes) async {
     final Map<dynamic, dynamic> result = await _channel
         .invokeMethod('setNotificationQuietHours', <String, dynamic>{
@@ -283,58 +314,28 @@ class FlutterRongim {
     });
   }
 
-  static Stream<ResultCallback<Message>> sendMessage(Message message) {
-    Map<String, dynamic> arguments = message.toMap();
-    arguments.putIfAbsent("method", () => "sendMessage");
-    print("chenpei" + arguments.toString());
-    Stream<ResultCallback<Message>> _onMessageCallback;
-    if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
-          .receiveBroadcastStream(arguments)
-          .map((event) =>
-      new ResultCallback<Message>.fromJson(
-          event));
-    }
-    return _onMessageCallback;
+  static SendMessageTask sendMessage(Message message) {
+    SendMessageTask task = SendMessageTask(instance, "sendMessage");
+    task._start(message);
+    return task;
   }
 
-  static Stream<ResultCallback<Message>> sendLocationMessage(Message message) {
-    Map<String, dynamic> arguments = message.toMap();
-    arguments.putIfAbsent("method", () => "sendLocationMessage");
-    Stream<ResultCallback<Message>> _onMessageCallback;
-    if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
-          .receiveBroadcastStream(arguments)
-          .map((dynamic event) => new ResultCallback<Message>.fromJson(
-          event));
-    }
-    return _onMessageCallback;
+  static SendMessageTask sendLocationMessage(Message message) {
+    SendMessageTask task = SendMessageTask(instance, "sendLocationMessage");
+    task._start(message);
+    return task;
   }
 
-  static Stream<ResultCallback<Message>> sendImageMessage(Message message) {
-    Map<String, dynamic> arguments = message.toMap();
-    arguments.putIfAbsent("method", () => "sendImageMessage");
-    Stream<ResultCallback<Message>> _onMessageCallback;
-    if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
-          .receiveBroadcastStream(arguments)
-          .map((dynamic event) => new ResultCallback<Message>.fromJson(
-          event));
-    }
-    return _onMessageCallback;
+  static SendMessageTask sendImageMessage(Message message) {
+    SendMessageTask task = SendMessageTask(instance, "sendImageMessage");
+    task._start(message);
+    return task;
   }
 
-  static Stream<ResultCallback<Message>> sendMediaMessage(Message message) {
-    Map<String, dynamic> arguments = message.toMap();
-    arguments.putIfAbsent("method", () => "sendMediaMessage");
-    Stream<ResultCallback<Message>> _onMessageCallback;
-    if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
-          .receiveBroadcastStream(arguments)
-          .map((dynamic event) => new ResultCallback<Message>.fromJson(
-          event));
-    }
-    return _onMessageCallback;
+  static SendMessageTask sendMediaMessage(Message message) {
+    SendMessageTask task = SendMessageTask(instance, "sendMediaMessage");
+    task._start(message);
+    return task;
   }
 
   static Stream<ResultCallback<Message>> setOnReceiveMessageListener() {
@@ -342,35 +343,40 @@ class FlutterRongim {
     arguments.putIfAbsent("method", () => "setOnReceiveMessageListener");
     Stream<ResultCallback<Message>> _onMessageCallback;
     if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
+      _onMessageCallback = _eventChannelFor("setOnReceiveMessageListener")
           .receiveBroadcastStream(arguments)
-          .map((dynamic event) => new ResultCallback<Message>.fromJson(
+          .map((dynamic event) =>
+      new ResultCallback<Message>.fromJson(
           event));
     }
     return _onMessageCallback;
   }
 
-  static Stream<ResultCallback<ConnectionStatus>> setConnectionStatusListener() {
+  static Stream<
+      ResultCallback<ConnectionStatus>> setConnectionStatusListener() {
     Map<String, dynamic> arguments = new Map();
     arguments.putIfAbsent("method", () => "setConnectionStatusListener");
     Stream<ResultCallback<ConnectionStatus>> _onMessageCallback;
     if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
+      _onMessageCallback = _eventChannelFor("setConnectionStatusListener")
           .receiveBroadcastStream(arguments)
-          .map((dynamic event) => new ResultCallback<ConnectionStatus>.fromJson(event));
+          .map((dynamic event) =>
+      new ResultCallback<ConnectionStatus>.fromJson(event));
     }
     return _onMessageCallback;
   }
 
   // TODO
-  static Stream<ResultCallback<TypingStatusListener>> setTypingStatusListener() {
+  static Stream<
+      ResultCallback<TypingStatusListener>> setTypingStatusListener() {
     Map<String, dynamic> arguments = new Map();
     arguments.putIfAbsent("method", () => "setTypingStatusListener");
     Stream<ResultCallback<TypingStatusListener>> _onMessageCallback;
     if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
+      _onMessageCallback = _eventChannelFor("setTypingStatusListener")
           .receiveBroadcastStream(arguments)
-          .map((dynamic event) => new ResultCallback<TypingStatusListener>.fromJson(event));
+          .map((dynamic event) =>
+      new ResultCallback<TypingStatusListener>.fromJson(event));
     }
     return _onMessageCallback;
   }
@@ -380,7 +386,7 @@ class FlutterRongim {
     arguments.putIfAbsent("method", () => "setRCLogInfoListener");
     Stream<ResultCallback<String>> _onMessageCallback;
     if (_onMessageCallback == null) {
-      _onMessageCallback = _channel_event
+      _onMessageCallback = _eventChannelFor("setRCLogInfoListener")
           .receiveBroadcastStream(arguments)
           .map((dynamic event) => new ResultCallback<String>.fromJson(event));
     }

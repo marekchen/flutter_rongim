@@ -113,7 +113,6 @@ class Utils {
         Map<String, Object> map = new HashMap<>();
         map.put("targetId", message.getTargetId());
         map.put("conversationType", message.getConversationType().getValue());
-        Log.i("chenpei", message.toString());
         Map<String, Object> content = messageContentToMap(message.getObjectName(), message.getContent());
         if (content != null) {
             map.put("content", content);

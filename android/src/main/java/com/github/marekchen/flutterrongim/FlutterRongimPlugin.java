@@ -42,10 +42,22 @@ import static com.github.marekchen.flutterrongim.Utils.*;
  */
 public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
 
-    private static Context mContext;
+    private static final String EVENT_CHANNEL_PREFIX = "plugins.marekchen.github.com/flutter_rongim_event";
+    private final static String TAG = "FlutterRongimPlugin";
+
+    private MethodChannel mChannel = null;
+
+    private int nextUploadHandle = 0;
+
+    private FlutterRongimPlugin() {
+    }
+
+    private FlutterRongimPlugin(MethodChannel channel) {
+        this.mChannel = channel;
+    }
 
     public static void init(Context context) {
-        Log.i("chenpei", "init");
+        Log.i(TAG, "init");
         RongIMClient.init(context);
     }
 
@@ -53,15 +65,24 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
      * Plugin registration.
      */
     public static void registerWith(Registrar registrar) {
-        mContext = registrar.context();
         final MethodChannel channel = new MethodChannel(registrar.messenger(), "plugins.marekchen.github.com/flutter_rongim");
-        final EventChannel eventChannel = new EventChannel(registrar.messenger(), "plugins.marekchen.github.com/flutter_rongim_event");
-        FlutterRongimPlugin instance = new FlutterRongimPlugin();
-        channel.setMethodCallHandler(instance);
-        eventChannel.setStreamHandler(instance);
-    }
+        channel.setMethodCallHandler(new FlutterRongimPlugin());
 
-    private final static String TAG = "FlutterRongimPlugin";
+        final MethodChannel channel_send_message = new MethodChannel(registrar.messenger(), "plugins.marekchen.github.com/flutter_rongim_send_message");
+        channel_send_message.setMethodCallHandler(new FlutterRongimPlugin(channel_send_message));
+
+        final EventChannel eventChannel = new EventChannel(registrar.messenger(), EVENT_CHANNEL_PREFIX);
+        eventChannel.setStreamHandler(new FlutterRongimPlugin());
+
+        final EventChannel eventChannel1 = new EventChannel(registrar.messenger(), EVENT_CHANNEL_PREFIX + "#setOnReceiveMessageListener");
+        eventChannel1.setStreamHandler(new FlutterRongimPlugin());
+        final EventChannel eventChannel2 = new EventChannel(registrar.messenger(), EVENT_CHANNEL_PREFIX + "#setConnectionStatusListener");
+        eventChannel2.setStreamHandler(new FlutterRongimPlugin());
+        final EventChannel eventChannel3 = new EventChannel(registrar.messenger(), EVENT_CHANNEL_PREFIX + "#setTypingStatusListener");
+        eventChannel3.setStreamHandler(new FlutterRongimPlugin());
+        final EventChannel eventChannel4 = new EventChannel(registrar.messenger(), EVENT_CHANNEL_PREFIX + "#setRCLogInfoListener");
+        eventChannel4.setStreamHandler(new FlutterRongimPlugin());
+    }
 
     @Override
     public void onMethodCall(MethodCall methodCall, final Result result) {
@@ -75,6 +96,20 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
             case "logout":
                 logout(methodCall, result);
                 break;
+            // START special
+            case "sendMessage":
+                sendMessage(methodCall, result);
+                break;
+            case "sendLocationMessage":
+                sendLocationMessage(methodCall, result);
+                break;
+            case "sendImageMessage":
+                sendImageMessage(methodCall, result);
+                break;
+            case "sendMediaMessage":
+                sendMediaMessage(methodCall, result);
+                break;
+            // END special
             case "insertMessage":
                 // NO
                 break;
@@ -230,7 +265,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
 
     private void connect(MethodCall methodCall, final Result result) {
         String token = methodCall.argument("token");
-        Log.i("chenpei", token);
+        Log.i(TAG, token);
         RongIMClient.connect(token, new RongIMClient.ConnectCallback() {
             @Override
             public void onTokenIncorrect() {
@@ -804,18 +839,6 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
     public void onListen(Object arguments, final EventChannel.EventSink eventSink) {
         Log.i(TAG, "onListen:" + arguments);
         switch ((String) argument(arguments, "method")) {
-            case "sendMessage":
-                sendMessage(arguments, eventSink);
-                break;
-            case "sendLocationMessage":
-                sendLocationMessage(arguments, eventSink);
-                break;
-            case "sendImageMessage":
-                sendImageMessage(arguments, eventSink);
-                break;
-            case "sendMediaMessage":
-                sendMediaMessage(arguments, eventSink);
-                break;
             case "setOnReceiveMessageListener":
                 setOnReceiveMessageListener(arguments, eventSink);
                 break;
@@ -836,221 +859,82 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
 
     }
 
-    private void sendMessage(Object arguments, final EventChannel.EventSink eventSink) {
-        String targetId = (String) argument(arguments, "targetId");
-        String pushContent = (String) argument(arguments, "pushContent");
-        String pushData = (String) argument(arguments, "pushData");
-        int conversationType = (int) argument(arguments, "conversationType");
+    private SendMessageTaskCallback getSendMessageTaskCallback() {
+        final int handle = ++nextUploadHandle;
+        return new SendMessageTaskCallback(handle, mChannel);
+    }
 
-        Map<String, Object> content = (Map<String, Object>) argument(arguments, "content");
+    private void sendMessage(MethodCall methodCall, final Result result) {
+        String targetId = methodCall.argument("targetId");
+        String pushContent = methodCall.argument("pushContent");
+        String pushData = methodCall.argument("pushData");
+        int conversationType = methodCall.argument("conversationType");
+
+        Map<String, Object> content = methodCall.argument("content");
         String text = (String) content.get("content");
         TextMessage myTextMessage = TextMessage.obtain(text);
-        Message myMessage = Message.obtain(targetId, ConversationType.setValue(conversationType), myTextMessage);
-        RongIMClient.getInstance().sendMessage(myMessage, pushContent, pushData, new IRongCallback.ISendMessageCallback() {
-            @Override
-            public void onAttached(Message message) {
-                Log.i(TAG, "onAttached");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onAttached");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
+        Message message = Message.obtain(targetId, ConversationType.setValue(conversationType), myTextMessage);
 
-            @Override
-            public void onSuccess(Message message) {
-                Log.i(TAG, "onSuccess");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", true);
-                re.put("callbackType", "onSuccess");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
-
-            @Override
-            public void onError(Message message, ErrorCode errorCode) {
-                Log.i(TAG, "onError");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onError");
-                //re.put("result", messageToMap(message));
-                re.put("errorCode", errorCodeToMap(errorCode));
-                eventSink.success(re);
-            }
-        });
+        final IRongCallback.ISendMessageCallback callback = getSendMessageTaskCallback();
+        RongIMClient.getInstance().sendMessage(message, pushContent, pushData, callback);
+        result.success(((SendMessageTaskCallback) callback).handle);
     }
 
 
-    private void sendLocationMessage(Object arguments, final EventChannel.EventSink eventSink) {
-        String targetId = (String) argument(arguments, "targetId");
-        String pushContent = (String) argument(arguments, "pushContent");
-        String pushData = (String) argument(arguments, "pushData");
-        int conversationType = (int) argument(arguments, "conversationType");
+    private void sendLocationMessage(MethodCall methodCall, final Result result) {
+        String targetId = methodCall.argument("targetId");
+        String pushContent = methodCall.argument("pushContent");
+        String pushData = methodCall.argument("pushData");
+        int conversationType = methodCall.argument("conversationType");
 
-        Map<String, Object> content = (Map<String, Object>) argument(arguments, "content");
+        Map<String, Object> content = methodCall.argument("content");
         double lat = (double) content.get("lat");
         double lng = (double) content.get("lng");
         String poi = (String) content.get("poi");
         Uri imgUri = Uri.parse((String) content.get("imgUri"));
         LocationMessage locationMessage = LocationMessage.obtain(lat, lng, poi, imgUri);
-        Message myMessage2 = Message.obtain(targetId, ConversationType.setValue(conversationType), locationMessage);
-        RongIMClient.getInstance().sendLocationMessage(myMessage2, pushContent, pushData, new IRongCallback.ISendMessageCallback() {
-            @Override
-            public void onAttached(Message message) {
-                Log.i(TAG, "onAttached");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onAttached");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
+        Message message = Message.obtain(targetId, ConversationType.setValue(conversationType), locationMessage);
 
-            @Override
-            public void onSuccess(Message message) {
-                Log.i(TAG, "onSuccess");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", true);
-                re.put("callbackType", "onSuccess");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
-
-            @Override
-            public void onError(Message message, ErrorCode errorCode) {
-                Log.i(TAG, "onError");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onError");
-                //re.put("result", messageToMap(message));
-                re.put("errorCode", errorCodeToMap(errorCode));
-                eventSink.success(re);
-            }
-        });
+        final IRongCallback.ISendMessageCallback callback = getSendMessageTaskCallback();
+        RongIMClient.getInstance().sendMessage(message, pushContent, pushData, callback);
+        result.success(((SendMessageTaskCallback) callback).handle);
     }
 
-    private void sendImageMessage(Object arguments, final EventChannel.EventSink eventSink) {
-        String targetId = (String) argument(arguments, "targetId");
-        String pushContent = (String) argument(arguments, "pushContent");
-        String pushData = (String) argument(arguments, "pushData");
-        int conversationType = (int) argument(arguments, "conversationType");
+    private void sendImageMessage(MethodCall methodCall, final Result result) {
+        String targetId = methodCall.argument("targetId");
+        String pushContent = methodCall.argument("pushContent");
+        String pushData = methodCall.argument("pushData");
+        int conversationType = methodCall.argument("conversationType");
 
-        Map<String, Object> content = (Map<String, Object>) argument(arguments, "content");
+        Map<String, Object> content = methodCall.argument("content");
         Log.i(TAG, "content:" + content.toString());
         boolean isFull = (boolean) content.get("isFull");
         Uri thumbUri = Uri.parse((String) content.get("thumbUri"));
         Uri localUri = Uri.parse((String) content.get("localUri"));
         ImageMessage imageMessage = ImageMessage.obtain(thumbUri, localUri, isFull);
-        Message myMessage3 = Message.obtain(targetId, ConversationType.setValue(conversationType), imageMessage);
-        RongIMClient.getInstance().sendImageMessage(myMessage3, pushContent, pushData, new SendImageMessageCallback() {
-            @Override
-            public void onAttached(Message message) {
-                Log.i(TAG, "onAttached");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onAttached");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
+        Message message = Message.obtain(targetId, ConversationType.setValue(conversationType), imageMessage);
 
-            @Override
-            public void onSuccess(Message message) {
-                Log.i(TAG, "onSuccess");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", true);
-                re.put("callbackType", "onSuccess");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
-
-            @Override
-            public void onError(Message message, ErrorCode errorCode) {
-                Log.i(TAG, "onError");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onError");
-                //re.put("result", messageToMap(message));
-                re.put("errorCode", errorCodeToMap(errorCode));
-                eventSink.success(re);
-            }
-
-            @Override
-            public void onProgress(Message message, int i) {
-                Log.i(TAG, "onProgress");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onError");
-                re.put("result", messageToMap(message));
-                re.put("progress", i);
-                eventSink.success(re);
-            }
-        });
+        final IRongCallback.ISendMessageCallback callback = getSendMessageTaskCallback();
+        RongIMClient.getInstance().sendMessage(message, pushContent, pushData, callback);
+        result.success(((SendMessageTaskCallback) callback).handle);
     }
 
-    private void sendMediaMessage(Object arguments, final EventChannel.EventSink eventSink) {
-        String targetId = (String) argument(arguments, "targetId");
-        String pushContent = (String) argument(arguments, "pushContent");
-        String pushData = (String) argument(arguments, "pushData");
-        int conversationType = (int) argument(arguments, "conversationType");
+    private void sendMediaMessage(MethodCall methodCall, final Result result) {
+        String targetId = methodCall.argument("targetId");
+        String pushContent = methodCall.argument("pushContent");
+        String pushData = methodCall.argument("pushData");
+        int conversationType = methodCall.argument("conversationType");
 
-        Map<String, Object> content = (Map<String, Object>) argument(arguments, "content");
+        Map<String, Object> content = methodCall.argument("content");
         Log.i(TAG, "content:" + content.toString());
         Uri localUri = Uri.parse((String) content.get("localUri"));
 
         FileMessage fileMessage = FileMessage.obtain(localUri);
-        Message message4 = Message.obtain(targetId, ConversationType.setValue(conversationType), fileMessage);
-        RongIMClient.getInstance().sendMediaMessage(message4, pushContent, pushData, new IRongCallback.ISendMediaMessageCallback() {
-            @Override
-            public void onAttached(Message message) {
-                Log.i(TAG, "onAttached");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onAttached");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
+        Message message = Message.obtain(targetId, ConversationType.setValue(conversationType), fileMessage);
 
-            @Override
-            public void onSuccess(Message message) {
-                Log.i(TAG, "onSuccess");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", true);
-                re.put("callbackType", "onSuccess");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
-
-            @Override
-            public void onError(Message message, ErrorCode errorCode) {
-                Log.i(TAG, "onError");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onError");
-                //re.put("result", messageToMap(message));
-                re.put("errorCode", errorCodeToMap(errorCode));
-                eventSink.success(re);
-            }
-
-            @Override
-            public void onProgress(Message message, int i) {
-                Log.i(TAG, "onProgress");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onError");
-                re.put("result", messageToMap(message));
-                re.put("progress", i);
-                eventSink.success(re);
-            }
-
-            @Override
-            public void onCanceled(Message message) {
-                Log.i(TAG, "onCanceled");
-                Map<String, Object> re = new HashMap<>();
-                re.put("isSuccess", false);
-                re.put("callbackType", "onCanceled");
-                re.put("result", messageToMap(message));
-                eventSink.success(re);
-            }
-        });
+        final IRongCallback.ISendMessageCallback callback = getSendMessageTaskCallback();
+        RongIMClient.getInstance().sendMessage(message, pushContent, pushData, callback);
+        result.success(((SendMessageTaskCallback) callback).handle);
     }
 
     private void setOnReceiveMessageListener(Object arguments, final EventChannel.EventSink eventSink) {
@@ -1112,7 +996,7 @@ public class FlutterRongimPlugin implements MethodCallHandler, StreamHandler {
         RongIMClient.setRCLogInfoListener(new RongIMClient.RCLogInfoListener() {
             @Override
             public void onRCLogInfoOccurred(String s) {
-                Log.i("chenpei", "setRCLogInfoListener:" + s);
+                Log.i(TAG, "setRCLogInfoListener:" + s);
                 Map<String, Object> re = new HashMap<>();
                 re.put("isSuccess", true);
                 re.put("callbackType", "onRCLogInfoOccurred");

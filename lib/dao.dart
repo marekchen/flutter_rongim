@@ -17,9 +17,8 @@ class ResultCallback<T> {
   }
 
   factory ResultCallback.fromJson(Map<dynamic, dynamic> json) {
-    print("chenpei" + json.toString());
+    print(FlutterRongim.TAG + json.toString());
     var result = json['result'];
-    print("chenpei" + "Type:" + T.toString());
     switch (T) {
       case Conversation:
         result = Conversation.fromJson(result);
@@ -80,7 +79,7 @@ class ConnectCallback extends ResultCallback<String> {
       : super(isSuccess, callbackType, result, errorCode);
 
   factory ConnectCallback.fromJson(Map<dynamic, dynamic> json) {
-    print("chenpei" + json.toString());
+    print(FlutterRongim.TAG + json.toString());
     ConnectCallback callback = ConnectCallback(
       json['isSuccess'],
       json['callbackType'],
@@ -104,7 +103,7 @@ class SendMessageCallback extends ResultCallback<Message> {
   }
 
   factory SendMessageCallback.fromJson(Map<dynamic, dynamic> json) {
-    print("chenpei" + json.toString());
+    print(FlutterRongim.TAG + json.toString());
     SendMessageCallback callback = SendMessageCallback(
       json['isSuccess'],
       json['callbackType'],
@@ -149,7 +148,6 @@ enum ConnectionStatus {
 }
 
 ConnectionStatus connectionStatusFromInt(int value) {
-  print("value:" + value.toString());
   if (value == -1) {
     value = 7;
   }
@@ -196,7 +194,6 @@ class Conversation {
   });
 
   factory Conversation.fromJson(Map<dynamic, dynamic> json) {
-    print("chenpei:" + json.toString());
     Conversation conversation = Conversation(
       conversationType: conversationTypeFromInt(json['conversationType']),
       targetId: json['targetId'],
@@ -255,7 +252,6 @@ enum ConversationNotificationStatus {
 
 ConversationNotificationStatus conversationNotificationStatusFromInt(
     int value) {
-  print("value:" + value.toString());
   return ConversationNotificationStatus.values
       .firstWhere((md) => md.index == value);
 }
@@ -274,7 +270,6 @@ enum ConversationType {
 }
 
 ConversationType conversationTypeFromInt(int value) {
-  print("value:" + value.toString());
   return ConversationType.values.firstWhere((md) => md.index == value);
 }
 
@@ -287,7 +282,6 @@ enum ReceivedStatus {
 }
 
 ReceivedStatus receivedStatusFromInt(int value) {
-  print("value:" + value.toString());
   return ReceivedStatus.values.firstWhere((md) => md.index == value);
 }
 
@@ -303,7 +297,6 @@ enum SentStatus {
 }
 
 SentStatus sentStatusFromInt(int value) {
-  print("value:" + value.toString());
   return SentStatus.values.firstWhere((md) => md.index == value ~/ 10);
 }
 
